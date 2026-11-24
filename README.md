@@ -1,4 +1,4 @@
-# geminilive
+# realtime-voice
 
 A server that speaks the **Gemini Live** (`BidiGenerateContent`) WebSocket
 protocol, backed by whatever speech stack you plug in.
@@ -22,14 +22,14 @@ Nothing in here is tied to a business domain, and no stage is tied to a vendor:
 ## Wiring
 
 ```go
-pipeline := geminilive.NewPipeline(geminilive.Config{
-	ASR: myASR,   // geminilive.ASR
-	LLM: myLLM,   // geminilive.TextLLM
-	TTS: myTTS,   // geminilive.TTS
+pipeline := realtimevoice.NewPipeline(realtimevoice.Config{
+	ASR: myASR,   // realtimevoice.ASR
+	LLM: myLLM,   // realtimevoice.TextLLM
+	TTS: myTTS,   // realtimevoice.TTS
 
-	ASROptions: geminilive.ASROptions{Language: "zh-CN", SampleRate: 16000},
-	TTSOptions: geminilive.TTSOptions{Voice: "zh_female_vv_uranus_bigtts", SampleRate: 24000},
-	LLMOptions: geminilive.LLMOptions{
+	ASROptions: realtimevoice.ASROptions{Language: "zh-CN", SampleRate: 16000},
+	TTSOptions: realtimevoice.TTSOptions{Voice: "zh_female_vv_uranus_bigtts", SampleRate: 24000},
+	LLMOptions: realtimevoice.LLMOptions{
 		Model:             "gemini-2.5-flash",
 		SystemInstruction: "You are a voice assistant. Answer in one short sentence.",
 		Temperature:       0.6,
@@ -38,9 +38,9 @@ pipeline := geminilive.NewPipeline(geminilive.Config{
 	MaxClauseRunes: 40,          // split long replies so audio starts early
 })
 
-srv := &geminilive.Server{
+srv := &realtimevoice.Server{
 	APIKey: "client-facing-key",
-	Engine: func(ctx context.Context, setup *geminilive.Setup) (geminilive.Engine, error) {
+	Engine: func(ctx context.Context, setup *realtimevoice.Setup) (realtimevoice.Engine, error) {
 		return pipeline, nil
 	},
 }
@@ -64,7 +64,7 @@ A provider is ~20 lines. Speech synthesis, for example:
 ```go
 type MyTTS struct{ apiKey string }
 
-func (t *MyTTS) Speak(ctx context.Context, text string, opts geminilive.TTSOptions, onPCM func([]byte) error) error {
+func (t *MyTTS) Speak(ctx context.Context, text string, opts realtimevoice.TTSOptions, onPCM func([]byte) error) error {
 	// ... synthesize text with opts.Voice / opts.Language / opts.SampleRate,
 	// calling onPCM for each fragment. Return ctx.Err() to stop on barge-in.
 	return nil
@@ -84,7 +84,7 @@ The turn loop is provider-agnostic:
 
 ## Running the reference server
 
-`cmd/geminilive-mock` ships two engines:
+`cmd/voice-server` ships two engines:
 
 - **scripted** (default) — no credentials, deterministic audio: a protocol
   conformance harness;
@@ -92,7 +92,7 @@ The turn loop is provider-agnostic:
   `-llm-key` and `-asr-key` are set.
 
 ```bash
-go run ./cmd/geminilive-mock \
+go run ./cmd/voice-server \
   -api-key devkey \
   -llm-key "$VERTEX_API_KEY" -llm-project "$VERTEX_PROJECT_ID" -llm-model gemini-2.5-flash \
   -asr-key "$BYTEPLUS_API_KEY" \
@@ -156,5 +156,5 @@ pipeline.go        ASR → LLM → TTS turn loop
 llm.go             Gemini text LLM
 byteplus_asr.go    BytePlus Seed ASR 2.0 (SAUC binary framing)
 byteplus_tts.go    BytePlus Seed TTS 2.0
-cmd/geminilive-mock
+cmd/voice-server
 ```

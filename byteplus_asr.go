@@ -1,4 +1,4 @@
-package geminilive
+package realtimevoice
 
 import (
 	"context"
@@ -72,7 +72,7 @@ type ASRSession struct {
 // server can serve sessions in different languages without a new provider.
 func (b *BytePlusASR) Open(ctx context.Context, opts ASROptions, onPartial func(text string) error) (ASRSessionHandle, error) {
 	if b.APIKey == "" {
-		return nil, errors.New("geminilive: byteplus asr api key is empty")
+		return nil, errors.New("realtimevoice: byteplus asr api key is empty")
 	}
 	endpoint := b.URL
 	if endpoint == "" {
@@ -97,7 +97,7 @@ func (b *BytePlusASR) Open(ctx context.Context, opts ASROptions, onPartial func(
 		if resp != nil {
 			body = resp.Status
 		}
-		return nil, fmt.Errorf("geminilive: byteplus asr dial: %w (%s)", err, body)
+		return nil, fmt.Errorf("realtimevoice: byteplus asr dial: %w (%s)", err, body)
 	}
 
 	model := b.Model
@@ -109,7 +109,7 @@ func (b *BytePlusASR) Open(ctx context.Context, opts ASROptions, onPartial func(
 		sampleRate = InputSampleRate
 	}
 	req := map[string]any{
-		"user":  map[string]any{"uid": "geminilive"},
+		"user":  map[string]any{"uid": "realtimevoice"},
 		"audio": map[string]any{"format": "pcm", "sample_rate": sampleRate, "channel": 1, "bits": 16, "codec": "raw"},
 		"request": map[string]any{
 			"reqid":           newASRHandle(),
@@ -133,7 +133,7 @@ func (b *BytePlusASR) Open(ctx context.Context, opts ASROptions, onPartial func(
 	}
 	if err := conn.WriteMessage(websocket.BinaryMessage, saucFrame(saucTypeFullReq, saucFlagSequence, saucSerialization, 1, payload)); err != nil {
 		_ = conn.Close()
-		return nil, fmt.Errorf("geminilive: byteplus asr setup: %w", err)
+		return nil, fmt.Errorf("realtimevoice: byteplus asr setup: %w", err)
 	}
 
 	s := &ASRSession{
@@ -157,7 +157,7 @@ func (s *ASRSession) Push(ctx context.Context, pcm16k []byte) error {
 		return nil
 	}
 	if err := s.conn.WriteMessage(websocket.BinaryMessage, saucFrame(saucTypeAudio, 0, 0, 0, pcm16k)); err != nil {
-		return fmt.Errorf("geminilive: byteplus asr push: %w", err)
+		return fmt.Errorf("realtimevoice: byteplus asr push: %w", err)
 	}
 	return nil
 }
@@ -171,7 +171,7 @@ func (s *ASRSession) Finish(ctx context.Context) (string, error) {
 		s.finished = true
 		if err := s.conn.WriteMessage(websocket.BinaryMessage, saucFrame(saucTypeAudio, saucFlagLast, 0, 0, nil)); err != nil {
 			s.mu.Unlock()
-			return s.LastText(), fmt.Errorf("geminilive: byteplus asr finish: %w", err)
+			return s.LastText(), fmt.Errorf("realtimevoice: byteplus asr finish: %w", err)
 		}
 	}
 	s.mu.Unlock()
@@ -238,7 +238,7 @@ func (s *ASRSession) readLoop(onPartial func(text string) error) {
 			return
 		}
 		if frame.messageType == saucTypeError {
-			s.setErr(fmt.Errorf("geminilive: byteplus asr: %s", frame.errorText()))
+			s.setErr(fmt.Errorf("realtimevoice: byteplus asr: %s", frame.errorText()))
 			return
 		}
 		if frame.messageType != saucTypeServer {
@@ -297,7 +297,7 @@ type saucServerFrame struct {
 
 func parseSAUC(msg []byte) (saucServerFrame, error) {
 	if len(msg) < 4 {
-		return saucServerFrame{}, fmt.Errorf("geminilive: short SAUC frame (%d bytes)", len(msg))
+		return saucServerFrame{}, fmt.Errorf("realtimevoice: short SAUC frame (%d bytes)", len(msg))
 	}
 	flags := msg[1] & 0x0F
 	off := 4
@@ -310,12 +310,12 @@ func parseSAUC(msg []byte) (saucServerFrame, error) {
 	// Generation and last flags share bits; only the low two bits ever carry a
 	// sequence, so the offset above is enough.
 	if len(msg) < off+4 {
-		return saucServerFrame{}, fmt.Errorf("geminilive: truncated SAUC frame")
+		return saucServerFrame{}, fmt.Errorf("realtimevoice: truncated SAUC frame")
 	}
 	size := int(binary.BigEndian.Uint32(msg[off : off+4]))
 	off += 4
 	if size < 0 || len(msg) < off+size {
-		return saucServerFrame{}, fmt.Errorf("geminilive: SAUC payload length %d exceeds frame %d", size, len(msg))
+		return saucServerFrame{}, fmt.Errorf("realtimevoice: SAUC payload length %d exceeds frame %d", size, len(msg))
 	}
 	return saucServerFrame{
 		messageType: msg[1] >> 4,
@@ -347,7 +347,7 @@ func (f saucServerFrame) transcript() (string, bool, error) {
 		} `json:"result"`
 	}
 	if err := json.Unmarshal(f.payload, &body); err != nil {
-		return "", false, fmt.Errorf("geminilive: decode byteplus asr frame: %w", err)
+		return "", false, fmt.Errorf("realtimevoice: decode byteplus asr frame: %w", err)
 	}
 	text := body.Result.Text
 	if text == "" {

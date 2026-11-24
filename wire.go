@@ -1,4 +1,4 @@
-// Package geminilive implements the server side of the Gemini Live
+// Package realtimevoice implements the server side of the Gemini Live
 // (BidiGenerateContent) WebSocket protocol.
 //
 // The frame types below mirror the production client in
@@ -7,7 +7,7 @@
 // casing, same transcription and tool-call semantics. Deliberate divergences
 // are documented where they occur (see ServerContent.GenerationComplete and
 // the absence of an error envelope).
-package geminilive
+package realtimevoice
 
 import (
 	"encoding/base64"

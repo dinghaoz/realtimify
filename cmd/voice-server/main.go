@@ -1,4 +1,4 @@
-// Command geminilive-mock serves the Gemini Live (BidiGenerateContent)
+// Command voice-server serves the Gemini Live (BidiGenerateContent)
 // WebSocket protocol backed by a scripted pipeline.
 //
 // It is the protocol conformance harness for the STT + text-LLM + TTS
@@ -20,7 +20,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/TheCloverLab/geminilive"
+	"github.com/dinghaoz/realtime-voice"
 )
 
 func main() {
@@ -73,10 +73,10 @@ func main() {
 		os.Exit(2)
 	}
 
-	srv := &geminilive.Server{
+	srv := &realtimevoice.Server{
 		APIKey: *apiKey,
 		Logger: logger,
-		Engine: func(_ context.Context, setup *geminilive.Setup) (geminilive.Engine, error) {
+		Engine: func(_ context.Context, setup *realtimevoice.Setup) (realtimevoice.Engine, error) {
 			voiceName := ""
 			if setup.GenerationConfig != nil && setup.GenerationConfig.SpeechConfig != nil &&
 				setup.GenerationConfig.SpeechConfig.VoiceConfig != nil &&
@@ -86,7 +86,7 @@ func main() {
 			logger.Info("session setup", "model", setup.Model, "gemini_voice", voiceName,
 				"tools", len(setup.Tools), "live", live)
 			if !live {
-				return geminilive.NewScriptedEngine(script), nil
+				return realtimevoice.NewScriptedEngine(script), nil
 			}
 
 			instruction := *system
@@ -99,22 +99,22 @@ func main() {
 					instruction = text
 				}
 			}
-			asr := &geminilive.BytePlusASR{APIKey: *asrKey, Language: *asrLanguage}
+			asr := &realtimevoice.BytePlusASR{APIKey: *asrKey, Language: *asrLanguage}
 			// The model travels per request (LLMOptions.Model), so the provider
 			// keeps no model of its own here.
-			llm := &geminilive.GeminiLLM{
+			llm := &realtimevoice.GeminiLLM{
 				Project: *llmProject, Location: "global", APIKey: *llmKey,
 				// Realtime voice cannot absorb default thinking latency or cost.
 				ThinkingBudget: new(int),
 			}
-			tts := &geminilive.BytePlusTTS{APIKey: *ttsKey}
-			return geminilive.NewPipeline(geminilive.Config{
+			tts := &realtimevoice.BytePlusTTS{APIKey: *ttsKey}
+			return realtimevoice.NewPipeline(realtimevoice.Config{
 				ASR:        asr,
 				LLM:        llm,
 				TTS:        tts,
-				ASROptions: geminilive.ASROptions{Language: *asrLanguage},
-				TTSOptions: geminilive.TTSOptions{Voice: *voice, Language: *ttsLanguage, Model: *ttsModel},
-				LLMOptions: geminilive.LLMOptions{
+				ASROptions: realtimevoice.ASROptions{Language: *asrLanguage},
+				TTSOptions: realtimevoice.TTSOptions{Voice: *voice, Language: *ttsLanguage, Model: *ttsModel},
+				LLMOptions: realtimevoice.LLMOptions{
 					Model:             *llmModel,
 					SystemInstruction: instruction,
 					Temperature:       *temperature,
@@ -143,7 +143,7 @@ func main() {
 	}
 
 	go func() {
-		logger.Info("geminilive-mock listening", "addr", *listen,
+		logger.Info("voice-server listening", "addr", *listen,
 			"turns", len(script.Turns), "api_key_required", *apiKey != "")
 		if err := httpSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Error("listen", "err", err)
@@ -160,15 +160,15 @@ func main() {
 	_ = httpSrv.Shutdown(ctx)
 }
 
-func loadScript(path, userText, reply string, audioMS, chunkMS, ttfbMS int, loop bool) (geminilive.Script, error) {
+func loadScript(path, userText, reply string, audioMS, chunkMS, ttfbMS int, loop bool) (realtimevoice.Script, error) {
 	if path != "" {
 		data, err := os.ReadFile(path)
 		if err != nil {
-			return geminilive.Script{}, err
+			return realtimevoice.Script{}, err
 		}
-		var script geminilive.Script
+		var script realtimevoice.Script
 		if err := json.Unmarshal(data, &script); err != nil {
-			return geminilive.Script{}, err
+			return realtimevoice.Script{}, err
 		}
 		if script.ChunkMS == 0 {
 			script.ChunkMS = chunkMS
@@ -178,11 +178,11 @@ func loadScript(path, userText, reply string, audioMS, chunkMS, ttfbMS int, loop
 		}
 		return script, nil
 	}
-	return geminilive.Script{
+	return realtimevoice.Script{
 		ChunkMS: chunkMS,
 		TTFBMS:  ttfbMS,
 		Loop:    loop,
-		Turns: []geminilive.ScriptTurn{{
+		Turns: []realtimevoice.ScriptTurn{{
 			UserTranscript: userText,
 			AssistantText:  reply,
 			AudioMS:        audioMS,

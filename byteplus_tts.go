@@ -1,4 +1,4 @@
-package geminilive
+package realtimevoice
 
 import (
 	"bytes"
@@ -51,7 +51,7 @@ func (t *BytePlusTTS) Speak(ctx context.Context, text string, opts TTSOptions, o
 		return nil
 	}
 	if t.APIKey == "" {
-		return fmt.Errorf("geminilive: byteplus tts api key is empty")
+		return fmt.Errorf("realtimevoice: byteplus tts api key is empty")
 	}
 	endpoint := t.URL
 	if endpoint == "" {
@@ -122,7 +122,7 @@ func (t *BytePlusTTS) Speak(ctx context.Context, text string, opts TTSOptions, o
 
 	if resp.StatusCode != http.StatusOK {
 		snippet, _ := io.ReadAll(io.LimitReader(resp.Body, 2048))
-		return fmt.Errorf("geminilive: byteplus tts returned %d: %s", resp.StatusCode, strings.TrimSpace(string(snippet)))
+		return fmt.Errorf("realtimevoice: byteplus tts returned %d: %s", resp.StatusCode, strings.TrimSpace(string(snippet)))
 	}
 	return readBytePlusTTS(resp.Body, onPCM)
 }
@@ -142,7 +142,7 @@ func readBytePlusTTS(body io.Reader, onPCM func([]byte) error) error {
 			if err == io.EOF {
 				return nil
 			}
-			return fmt.Errorf("geminilive: decode byteplus tts: %w", err)
+			return fmt.Errorf("realtimevoice: decode byteplus tts: %w", err)
 		}
 		switch chunk.Code {
 		case bytePlusTTSFinishCode:
@@ -150,14 +150,14 @@ func readBytePlusTTS(body io.Reader, onPCM func([]byte) error) error {
 		case 0:
 			// audio below
 		default:
-			return fmt.Errorf("geminilive: byteplus tts code %d: %s", chunk.Code, chunk.Message)
+			return fmt.Errorf("realtimevoice: byteplus tts code %d: %s", chunk.Code, chunk.Message)
 		}
 		if chunk.Data == "" {
 			continue
 		}
 		pcm, err := base64.StdEncoding.DecodeString(chunk.Data)
 		if err != nil {
-			return fmt.Errorf("geminilive: decode byteplus tts audio: %w", err)
+			return fmt.Errorf("realtimevoice: decode byteplus tts audio: %w", err)
 		}
 		if len(pcm) == 0 {
 			continue

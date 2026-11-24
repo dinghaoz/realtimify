@@ -1,4 +1,4 @@
-module github.com/TheCloverLab/geminilive
+module github.com/dinghaoz/realtime-voice
 
 go 1.27.3
 

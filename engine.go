@@ -1,4 +1,4 @@
-package geminilive
+package realtimevoice
 
 import (
 	"context"
@@ -73,7 +73,7 @@ type Engine interface {
 // ErrToolUpdateUnsupported is returned by an engine that cannot change its
 // tool set mid-session. The server then leaves the session running; callers
 // that need the swap should reconnect.
-var ErrToolUpdateUnsupported = errString("geminilive: tool update unsupported")
+var ErrToolUpdateUnsupported = errString("realtimevoice: tool update unsupported")
 
 type errString string
 

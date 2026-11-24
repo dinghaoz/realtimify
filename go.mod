@@ -1,4 +1,4 @@
-module github.com/dinghaoz/realtime-voice
+module github.com/dinghaoz/realtimify
 
 go 1.27.3
 

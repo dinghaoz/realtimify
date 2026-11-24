@@ -1,6 +1,6 @@
 //go:build livellm
 
-package realtimevoice
+package realtimify
 
 import (
 	"context"
@@ -16,7 +16,7 @@ import (
 // liveLLM builds a client from the environment. The Express-mode key works on
 // the global Vertex host, which is why Location defaults to "global".
 //
-//	VERTEX_API_KEY=... VERTEX_PROJECT_ID=... go test -tags livellm ./internal/realtimevoice -run Live -v
+//	VERTEX_API_KEY=... VERTEX_PROJECT_ID=... go test -tags livellm ./internal/realtimify -run Live -v
 func liveLLM(t *testing.T) *GeminiLLM {
 	t.Helper()
 	key := os.Getenv("VERTEX_API_KEY")

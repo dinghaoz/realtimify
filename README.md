@@ -1,4 +1,4 @@
-# realtime-voice
+# realtimify
 
 A server that speaks the **Gemini Live** (`BidiGenerateContent`) WebSocket
 protocol, backed by whatever speech stack you plug in.
@@ -22,14 +22,14 @@ Nothing in here is tied to a business domain, and no stage is tied to a vendor:
 ## Wiring
 
 ```go
-pipeline := realtimevoice.NewPipeline(realtimevoice.Config{
-	ASR: myASR,   // realtimevoice.ASR
-	LLM: myLLM,   // realtimevoice.TextLLM
-	TTS: myTTS,   // realtimevoice.TTS
+pipeline := realtimify.NewPipeline(realtimify.Config{
+	ASR: myASR,   // realtimify.ASR
+	LLM: myLLM,   // realtimify.TextLLM
+	TTS: myTTS,   // realtimify.TTS
 
-	ASROptions: realtimevoice.ASROptions{Language: "zh-CN", SampleRate: 16000},
-	TTSOptions: realtimevoice.TTSOptions{Voice: "zh_female_vv_uranus_bigtts", SampleRate: 24000},
-	LLMOptions: realtimevoice.LLMOptions{
+	ASROptions: realtimify.ASROptions{Language: "zh-CN", SampleRate: 16000},
+	TTSOptions: realtimify.TTSOptions{Voice: "zh_female_vv_uranus_bigtts", SampleRate: 24000},
+	LLMOptions: realtimify.LLMOptions{
 		Model:             "gemini-2.5-flash",
 		SystemInstruction: "You are a voice assistant. Answer in one short sentence.",
 		Temperature:       0.6,
@@ -38,9 +38,9 @@ pipeline := realtimevoice.NewPipeline(realtimevoice.Config{
 	MaxClauseRunes: 40,          // split long replies so audio starts early
 })
 
-srv := &realtimevoice.Server{
+srv := &realtimify.Server{
 	APIKey: "client-facing-key",
-	Engine: func(ctx context.Context, setup *realtimevoice.Setup) (realtimevoice.Engine, error) {
+	Engine: func(ctx context.Context, setup *realtimify.Setup) (realtimify.Engine, error) {
 		return pipeline, nil
 	},
 }
@@ -64,7 +64,7 @@ A provider is ~20 lines. Speech synthesis, for example:
 ```go
 type MyTTS struct{ apiKey string }
 
-func (t *MyTTS) Speak(ctx context.Context, text string, opts realtimevoice.TTSOptions, onPCM func([]byte) error) error {
+func (t *MyTTS) Speak(ctx context.Context, text string, opts realtimify.TTSOptions, onPCM func([]byte) error) error {
 	// ... synthesize text with opts.Voice / opts.Language / opts.SampleRate,
 	// calling onPCM for each fragment. Return ctx.Err() to stop on barge-in.
 	return nil

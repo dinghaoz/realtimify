@@ -1,4 +1,4 @@
-package realtimevoice
+package realtimify
 
 import (
 	"bufio"
@@ -83,14 +83,14 @@ const geminiDefaultBaseURL = "https://aiplatform.googleapis.com"
 // Stream implements TextLLM.
 func (g *GeminiLLM) Stream(ctx context.Context, req LLMRequest, onText func(string) error) (LLMResult, error) {
 	if g.APIKey == "" {
-		return LLMResult{}, errors.New("realtimevoice: gemini api key is empty")
+		return LLMResult{}, errors.New("realtimify: gemini api key is empty")
 	}
 	model := req.Model
 	if model == "" {
 		model = g.Model
 	}
 	if model == "" {
-		return LLMResult{}, errors.New("realtimevoice: gemini model is empty")
+		return LLMResult{}, errors.New("realtimify: gemini model is empty")
 	}
 	endpoint, err := g.endpoint(model)
 	if err != nil {
@@ -122,7 +122,7 @@ func (g *GeminiLLM) Stream(ctx context.Context, req LLMRequest, onText func(stri
 
 	if resp.StatusCode != http.StatusOK {
 		snippet, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
-		return LLMResult{}, fmt.Errorf("realtimevoice: gemini returned %d: %s", resp.StatusCode, strings.TrimSpace(string(snippet)))
+		return LLMResult{}, fmt.Errorf("realtimify: gemini returned %d: %s", resp.StatusCode, strings.TrimSpace(string(snippet)))
 	}
 
 	return readGeminiSSE(resp.Body, onText)
@@ -138,7 +138,7 @@ func (g *GeminiLLM) endpoint(model string) (string, error) {
 		loc = "global"
 	}
 	if g.Project == "" {
-		return "", errors.New("realtimevoice: gemini project is empty")
+		return "", errors.New("realtimify: gemini project is empty")
 	}
 	u, err := url.Parse(fmt.Sprintf("%s/v1/projects/%s/locations/%s/publishers/google/models/%s:streamGenerateContent",
 		base, url.PathEscape(g.Project), url.PathEscape(loc), url.PathEscape(model)))
@@ -278,10 +278,10 @@ func readGeminiSSE(body io.Reader, onText func(string) error) (LLMResult, error)
 		}
 		var chunk geminiStreamChunk
 		if err := json.Unmarshal([]byte(payload), &chunk); err != nil {
-			return result, fmt.Errorf("realtimevoice: decode gemini chunk: %w", err)
+			return result, fmt.Errorf("realtimify: decode gemini chunk: %w", err)
 		}
 		if chunk.PromptFeedback != nil && chunk.PromptFeedback.BlockReason != "" {
-			return result, fmt.Errorf("realtimevoice: prompt blocked: %s", chunk.PromptFeedback.BlockReason)
+			return result, fmt.Errorf("realtimify: prompt blocked: %s", chunk.PromptFeedback.BlockReason)
 		}
 		for _, cand := range chunk.Candidates {
 			if cand.FinishReason != "" {

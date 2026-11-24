@@ -20,7 +20,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/dinghaoz/realtime-voice"
+	"github.com/dinghaoz/realtimify"
 )
 
 func main() {
@@ -73,10 +73,10 @@ func main() {
 		os.Exit(2)
 	}
 
-	srv := &realtimevoice.Server{
+	srv := &realtimify.Server{
 		APIKey: *apiKey,
 		Logger: logger,
-		Engine: func(_ context.Context, setup *realtimevoice.Setup) (realtimevoice.Engine, error) {
+		Engine: func(_ context.Context, setup *realtimify.Setup) (realtimify.Engine, error) {
 			voiceName := ""
 			if setup.GenerationConfig != nil && setup.GenerationConfig.SpeechConfig != nil &&
 				setup.GenerationConfig.SpeechConfig.VoiceConfig != nil &&
@@ -86,7 +86,7 @@ func main() {
 			logger.Info("session setup", "model", setup.Model, "gemini_voice", voiceName,
 				"tools", len(setup.Tools), "live", live)
 			if !live {
-				return realtimevoice.NewScriptedEngine(script), nil
+				return realtimify.NewScriptedEngine(script), nil
 			}
 
 			instruction := *system
@@ -99,22 +99,22 @@ func main() {
 					instruction = text
 				}
 			}
-			asr := &realtimevoice.BytePlusASR{APIKey: *asrKey, Language: *asrLanguage}
+			asr := &realtimify.BytePlusASR{APIKey: *asrKey, Language: *asrLanguage}
 			// The model travels per request (LLMOptions.Model), so the provider
 			// keeps no model of its own here.
-			llm := &realtimevoice.GeminiLLM{
+			llm := &realtimify.GeminiLLM{
 				Project: *llmProject, Location: "global", APIKey: *llmKey,
 				// Realtime voice cannot absorb default thinking latency or cost.
 				ThinkingBudget: new(int),
 			}
-			tts := &realtimevoice.BytePlusTTS{APIKey: *ttsKey}
-			return realtimevoice.NewPipeline(realtimevoice.Config{
+			tts := &realtimify.BytePlusTTS{APIKey: *ttsKey}
+			return realtimify.NewPipeline(realtimify.Config{
 				ASR:        asr,
 				LLM:        llm,
 				TTS:        tts,
-				ASROptions: realtimevoice.ASROptions{Language: *asrLanguage},
-				TTSOptions: realtimevoice.TTSOptions{Voice: *voice, Language: *ttsLanguage, Model: *ttsModel},
-				LLMOptions: realtimevoice.LLMOptions{
+				ASROptions: realtimify.ASROptions{Language: *asrLanguage},
+				TTSOptions: realtimify.TTSOptions{Voice: *voice, Language: *ttsLanguage, Model: *ttsModel},
+				LLMOptions: realtimify.LLMOptions{
 					Model:             *llmModel,
 					SystemInstruction: instruction,
 					Temperature:       *temperature,
@@ -160,15 +160,15 @@ func main() {
 	_ = httpSrv.Shutdown(ctx)
 }
 
-func loadScript(path, userText, reply string, audioMS, chunkMS, ttfbMS int, loop bool) (realtimevoice.Script, error) {
+func loadScript(path, userText, reply string, audioMS, chunkMS, ttfbMS int, loop bool) (realtimify.Script, error) {
 	if path != "" {
 		data, err := os.ReadFile(path)
 		if err != nil {
-			return realtimevoice.Script{}, err
+			return realtimify.Script{}, err
 		}
-		var script realtimevoice.Script
+		var script realtimify.Script
 		if err := json.Unmarshal(data, &script); err != nil {
-			return realtimevoice.Script{}, err
+			return realtimify.Script{}, err
 		}
 		if script.ChunkMS == 0 {
 			script.ChunkMS = chunkMS
@@ -178,11 +178,11 @@ func loadScript(path, userText, reply string, audioMS, chunkMS, ttfbMS int, loop
 		}
 		return script, nil
 	}
-	return realtimevoice.Script{
+	return realtimify.Script{
 		ChunkMS: chunkMS,
 		TTFBMS:  ttfbMS,
 		Loop:    loop,
-		Turns: []realtimevoice.ScriptTurn{{
+		Turns: []realtimify.ScriptTurn{{
 			UserTranscript: userText,
 			AssistantText:  reply,
 			AudioMS:        audioMS,

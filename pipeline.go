@@ -1,4 +1,4 @@
-package realtimevoice
+package realtimify
 
 import (
 	"context"
@@ -49,7 +49,7 @@ func (p *Pipeline) PushAudio(ctx context.Context, pcm16k []byte, sink Sink) erro
 	if p.asr == nil {
 		if p.cfg.ASR == nil {
 			p.asrMu.Unlock()
-			return errors.New("realtimevoice: pipeline has no ASR configured")
+			return errors.New("realtimify: pipeline has no ASR configured")
 		}
 		session, err := p.cfg.ASR.Open(ctx, p.cfg.ASROptions, func(text string) error {
 			return p.reportTranscript(ctx, sink, text)
@@ -186,7 +186,7 @@ func (p *Pipeline) Close() error {
 
 func (p *Pipeline) generate(ctx context.Context, req LLMRequest, sink Sink) error {
 	if p.cfg.LLM == nil {
-		return errors.New("realtimevoice: pipeline has no LLM configured")
+		return errors.New("realtimify: pipeline has no LLM configured")
 	}
 	var buffered sentenceBuffer
 

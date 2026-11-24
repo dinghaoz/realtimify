@@ -1,0 +1,6 @@
+# binaries
+/geminilive-mock
+/cmd/geminilive-mock/geminilive-mock
+*.test
+*.out
+.DS_Store
